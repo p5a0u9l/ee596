@@ -25,14 +25,15 @@ def imshow_and_move(im, name, order):
 
 def main():
     # display_images("hw1")
-
+    isnotebook = False
     # reference
     im = cv2.imread("hw1/kidney-regions-sm.png")
-    imshow_and_move(im, "Organs: Reference", 0)
+    plt.imshow(im)
+    imshow_wrapper(im, name="Organs: Reference", order=0, notebook=isnotebook)
 
     # original
     im = cv2.imread("hw1/kidney.png")
-    imshow_and_move(im, "Organs: Original", 1)
+    imshow_wrapper(im, name="Organs: Original", order=1, notebook=isnotebook)
 
     # histogram
     if 0:
@@ -47,23 +48,24 @@ def main():
 
     # thresholding
     _, im_thresh = cv2.threshold(im, 128, 255, cv2.THRESH_BINARY_INV)
-    imshow_and_move(im_thresh, "Organs: Thresholded", 2)
+    imshow_wrapper(im_thresh, name="Organs: Thresholded", order=2, notebook=isnotebook)
 
     # morphology - dilated
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3,3))
     im_dilated = cv2.dilate(im_thresh, kernel)
-    imshow_and_move(im_dilated, "Organs: Dilated", 3)
+    imshow_wrapper(im_dilated, name="Organs: Dilated", order=3, notebook=isnotebook)
 
     # morphology - eroded
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (6,6))
     im_eroded = cv2.erode(im_dilated, kernel)
-    imshow_and_move(im_eroded, "Organs: Eroded", 4)
+    imshow_wrapper(im_eroded, name="Organs: Eroded", order=4, notebook=isnotebook)
 
     # get rid of images
-    # plt.show()
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    # plt.close("all")
+    if ~isnotebook:
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
+if __name__ == '__main__':
+    main()
 if __name__ == '__main__':
     main()
