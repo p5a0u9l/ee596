@@ -1,3 +1,6 @@
 .idea
 *.png
 hw1/
+images.in
+images.out
+.ipynb_checkpoints/

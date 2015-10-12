@@ -1,71 +1,81 @@
-__author__ = 'adamspr'
-
-import cv2
-from glob import glob
-from os.path import join
-import numpy as np
+#!/usr/bin/env python
 import matplotlib
 matplotlib.use("Qt4Agg")
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
+import cv2
+import numpy as np
+from glob import glob
+from os import path
+print "OpenCV version " + cv2.__version__
+print "matplotlib version " + matplotlib.__version__
 
-def display_images(base_path, ext=None):
-    if ext == None: ext = ".png"
-    imFiles = glob(join(base_path, "*" + ext))
-    for imF in imFiles:
-        im = cv2.imread(imF, 0)
-        cv2.imshow(imF, im)
-
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
 def imshow_and_move(im, name, order):
     a = np.shape(im)
     cv2.imshow(name, im)
-    cv2.moveWindow(name, (order % 3)*(a[0]+10), order//3*(a[1] + 40))
+    cv2.moveWindow(name, (order % 3) * (a[0]), order // 3 * (a[1]))
+
+
+def find_colorize_binary(im, fullpath, thresh, maxcontour):
+    # parse savename
+    filename, ext = path.splitext(fullpath)
+    filename = path.split(filename)[-1]
+
+    # Threshold
+    val, imth = cv2.threshold(im, thresh, 255, cv2.THRESH_BINARY)
+    cv2.imwrite("images.out/" + filename + "_thresh" + ext, imth)
+    # imth = cv2.adaptiveThreshold(im, 255,
+    #                              cv2.ADAPTIVE_THRESH_MEAN_C,
+    #                              cv2.THRESH_BINARY, 31, 2)
+
+    # # Initial Closing
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    im = cv2.morphologyEx(imth, cv2.MORPH_CLOSE, kernel)
+
+    # Opening
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (6, 6))
+    im = cv2.morphologyEx(im, cv2.MORPH_OPEN, kernel)
+
+    # Final Closing
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+    im = cv2.morphologyEx(im, cv2.MORPH_CLOSE, kernel)
+    cv2.imwrite("images.out/" + filename + "_morph" + ext, im)
+    imorph = im
+
+    # Find and Draw Contours
+    _, contours, _ = cv2.findContours(im, cv2.RETR_LIST,
+                                      cv2.CHAIN_APPROX_NONE)
+
+    im = np.zeros((im.shape[0], im.shape[1], 3), np.uint8)
+    for i in range(len(contours)):
+        if len(contours[i]) < maxcontour:
+            fillcolor = (0, 0, 0)
+        else:
+            fillcolor = tuple(np.random.randint(256, size=3))
+        cv2.drawContours(im, contours, i, fillcolor, -1)
+
+    cv2.imwrite("images.out/" + filename + "_final" + ext, im)
+    return imth, imorph, im
+
 
 def main():
-    # display_images("hw1")
-    isnotebook = False
-    # reference
-    im = cv2.imread("hw1/kidney-regions-sm.png")
-    plt.imshow(im)
-    imshow_wrapper(im, name="Organs: Reference", order=0, notebook=isnotebook)
+    images = glob(path.join("images.in", "hw1_*.png"))
+    maxcontour = 100
+    thresh = [131, 133, 131]
+    for idx, fullpath in enumerate(images):
+        # Read file convert to gray
+        im = cv2.cvtColor(cv2.imread(fullpath), cv2.COLOR_BGR2GRAY)
+        imshow_and_move(im, "Original: " + fullpath, 0)
+        im1, im2, im3 = find_colorize_binary(im, fullpath, thresh[idx], maxcontour)
 
-    # original
-    im = cv2.imread("hw1/kidney.png")
-    imshow_wrapper(im, name="Organs: Original", order=1, notebook=isnotebook)
+        imshow_and_move(im1, "Threshold: thresh %d" % thresh[idx], 1)
+        imshow_and_move(im2, "Morphology: " + fullpath, 2)
+        imshow_and_move(im3, "Colored: " + fullpath, 3)
 
-    # histogram
-    if 0:
-        x = im[:, :, 1]
-        x = x.reshape(512**2)
-        x_mu = x.astype('float')
-        x_mu[np.where(x == 0)] = np.nan # prevent zeros biasing mean estimate
-        x_mu = np.mean(x_mu)
-        plt.subplot()
-        plt.hist(x, 2**8)
-        plt.title("Mean is %.3f" % x_mu)
-
-    # thresholding
-    _, im_thresh = cv2.threshold(im, 128, 255, cv2.THRESH_BINARY_INV)
-    imshow_wrapper(im_thresh, name="Organs: Thresholded", order=2, notebook=isnotebook)
-
-    # morphology - dilated
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3,3))
-    im_dilated = cv2.dilate(im_thresh, kernel)
-    imshow_wrapper(im_dilated, name="Organs: Dilated", order=3, notebook=isnotebook)
-
-    # morphology - eroded
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (6,6))
-    im_eroded = cv2.erode(im_dilated, kernel)
-    imshow_wrapper(im_eroded, name="Organs: Eroded", order=4, notebook=isnotebook)
-
-    # get rid of images
-    if ~isnotebook:
+        # Closing
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-if __name__ == '__main__':
-    main()
+
 if __name__ == '__main__':
     main()
