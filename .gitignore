@@ -5,3 +5,4 @@ hw1/
 *images.out
 .ipynb_checkpoints/
 *.jpg
+*.pyc
