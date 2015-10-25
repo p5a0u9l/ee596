@@ -12,21 +12,21 @@ class ScreenImage():
         output = subprocess.check_output(('grep', '*'), stdin=xr.stdout)
         screen_res = [int(x) for x in re.findall('\d{4}', output)]
         self.max = np.array(screen_res)
-        print self.max
         self.cur = np.array([0, 0])
 
     def show(self, im, name):
         a = np.array(im[0].shape[:2])
-        fig = plt.subplot(131)
-        plt.imshow(im[0])
+        f = plt.figure(figsize=(10, 10))
+        ax = f.add_subplot(131)
+        ax.imshow(im[0])
         self.im_config(name[0])
 
-        fig = plt.subplot(132)
-        plt.imshow(im[1], cmap="gray")
+        ax = f.add_subplot(132)
+        ax.imshow(im[1], cmap="gray")
         self.im_config(name[1])
 
-        fig = plt.subplot(133)
-        plt.imshow(im[2])
+        ax = f.add_subplot(133)
+        ax.imshow(im[2], cmap="gray")
         self.im_config(name[2])
 
         plt.show()
