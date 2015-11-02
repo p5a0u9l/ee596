@@ -16,24 +16,33 @@ class ScreenImage():
 
     def show(self, im, name):
         a = np.array(im[0].shape[:2])
-        f = plt.figure(figsize=(10, 10))
-        ax = f.add_subplot(131)
+        f = plt.figure(figsize=(12, 10))
+        # print "## %s" % (title,)
+        ax = f.add_subplot(221)
         ax.imshow(im[0])
         self.im_config(name[0])
 
-        ax = f.add_subplot(132)
-        ax.imshow(im[1], cmap="gray")
+        ax = f.add_subplot(222)
+        ax.imshow(im[1][:, :, 0], cmap="gray")
         self.im_config(name[1])
 
-        ax = f.add_subplot(133)
-        ax.imshow(im[2], cmap="gray")
+        ax = f.add_subplot(223)
+        ax.imshow(im[2])
         self.im_config(name[2])
 
+        ax = f.add_subplot(224)
+        ax.imshow(im[3])
+        self.im_config(name[3])
+
+        # ax = f.add_subplot(235)
+        # ax.imshow(im[4], cmap="gray")
+        # self.im_config(name[4])
+
+        # ax = f.add_subplot(236)
+        # ax.imshow(im[5], cmap="gray")
+        # self.im_config(name[5])
+
         plt.show()
-        self.cur[0] += a[1]
-        if self.cur[0] > self.max[0]:
-            self.cur[1] += a[0]
-            self.cur[0] = 0
 
     def im_config(self, name):
         plt.title(name)
