@@ -11,6 +11,8 @@ from os.path import splitext, split
 from glob import glob
 import numpy as np
 import cv2
+from tabulate import tabulate
+import pickle
 
 
 def interest_operators(im, prefix):
@@ -41,9 +43,7 @@ def interest_operators(im, prefix):
     imsave("im.out/" + prefix + "_SURF_KeyPoints.jpg", im_surf)
 
 
-def homographize(im, operator=None):
-    des = {}
-    kpt = {}  # keypoint and descriptor dict encapsulators
+def homographize(ic, operator=None):
     bf = cv2.BFMatcher()
 
     if operator == "SURF":
@@ -52,12 +52,52 @@ def homographize(im, operator=None):
     elif operator == "SIFT":
         ops = cv2.xfeatures2d.SIFT_create()
 
-    kpt0, des0 = ops.detectAndCompute(im[0], None)
-    kpt1, des1 = ops.detectAndCompute(im[1], None)
+    kpt0, des0 = ops.detectAndCompute(ic[1], None)
+    kpt1, des1 = ops.detectAndCompute(ic[0], None)
+
     matches = bf.knnMatch(des0, des1, k=2)
     mp0 = np.array([kpt0[match[0].queryIdx].pt for match in matches])
     mp1 = np.array([kpt1[match[0].trainIdx].pt for match in matches])
     H, _ = cv2.findHomography(mp0, mp1, cv2.RANSAC)
+
+    if operator == "SURF":
+        tablex = []
+        tabley = []
+        # import ipdb; ipdb.set_trace()
+
+        for i in range(5):
+            y = matches[i][0]
+            if i % 2:
+                x = kpt0[np.random.random_integers(1000)]
+                fn = ic.files[0].replace("im.in/", "")
+            else:
+                x = kpt1[np.random.random_integers(1000)]
+                fn = ic.files[1].replace("im.in/", "")
+            if i == 0:
+                headerx = [name for name in dir(x) if not name.startswith('__')]
+                headery = [name for name in dir(y) if not name.startswith('__')]
+            valsx = [getattr(x, name) for name in headerx]
+            valsy = [getattr(y, name) for name in headery]
+            valsx.insert(0, fn); valsy.insert(0, fn)
+            tablex.append(valsx); tabley.append(valsy)
+
+        with open(fn[0] + "_homog_cache", "w+") as file_:
+            file_.write(tabulate(H, tablefmt="pipe"))
+
+        if fn[0] == "a":
+            pickle.dump(tablex, open("xtable_cache", "w"))
+            pickle.dump(tabley, open("ytable_cache", "w"))
+        else:
+            with open("_SURF_Map_table", "w+") as file_:
+                atable = pickle.load(open("ytable_cache", "r"))
+                [tabley.append(val) for val in atable]
+                headery.insert(0, "Image Name")
+                file_.write(tabulate(tabley, headery, tablefmt="pipe"))
+            with open("_SURF_KeyPoints_table", "w+") as file_:
+                atable = pickle.load(open("xtable_cache", "r"))
+                [tablex.append(val) for val in atable]
+                headerx.insert(0, "Image Name")
+                file_.write(tabulate(tablex, headerx, tablefmt="pipe"))
     return H
 
 
@@ -84,15 +124,14 @@ def main():
         interest_operators(im, prefix)
 
     for op in ["SURF", "SIFT"]:
-        for prefix in ["a", "b"]:
+        for prefix in ["a"]:
             print "%s: %s: Matching Descriptors and Computing"\
                 " Homography..." % (op, prefix)
-            im = [imread_wrapper(fn) for fn in
-                  (glob("im.in/" + prefix + "*.jpg"))]
-            H = homographize(im, operator=op)
-            print "%s: %s: Warping and Combining..." % (op, prefix)
+            ic = ImageCollection("im.in/" + prefix + "*.jpg", load_func=imread_wrapper)
+            H = homographize(ic, operator=op)
+            print "%s: %s: Warp, Combine, Save..." % (op, prefix)
             stitched = warp_and_stitch(H, prefix)
-            imsave("im.out/" + op + prefix + "_Combined.jpg", stitched)
+            imsave("im.out/" + op + "_" + prefix + "_Combined.jpg", stitched)
 
 
 if __name__ == '__main__':

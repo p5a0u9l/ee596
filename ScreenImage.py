@@ -14,26 +14,33 @@ class ScreenImage():
         self.max = np.array(screen_res)
         self.cur = np.array([0, 0])
 
-    def show(self, im, name):
-        a = np.array(im[0].shape[:2])
-        f = plt.figure(figsize=(12, 10))
+    def show(self, im, name, sqr_shape):
         # print "## %s" % (title,)
-        ax = f.add_subplot(221)
+        f = plt.figure(figsize=(14, 14))
+        if sqr_shape == 2:
+            a = 2; b = 1
+        elif sqr_shape == 4:
+            a = b = 2
+
+        ax = f.add_subplot(a, b, 1)
         ax.imshow(im[0])
-        self.im_config(name[0])
+        self.im_config(name[0].replace("_", " ").replace("/", " "))
 
-        ax = f.add_subplot(222)
-        ax.imshow(im[1][:, :, 0], cmap="gray")
-        self.im_config(name[1])
+        ax = f.add_subplot(a, b, 2)
+        ax.imshow(im[1])
+        self.im_config(name[1].replace("_", " ").replace("/", " "))
 
-        ax = f.add_subplot(223)
-        ax.imshow(im[2])
-        self.im_config(name[2])
+        if sqr_shape == 4:
+            ax = f.add_subplot(a, b, 3)
+            ax.imshow(im[2])
+            self.im_config(name[2].replace("_", " ").replace("/", " "))
 
-        ax = f.add_subplot(224)
-        ax.imshow(im[3])
-        self.im_config(name[3])
+            ax = f.add_subplot(a, b, 4)
+            ax.imshow(im[3])
+            self.im_config(name[3].replace("_", " ").replace("/", " "))
 
+        plt.tight_layout()
+        plt.show()
         # ax = f.add_subplot(235)
         # ax.imshow(im[4], cmap="gray")
         # self.im_config(name[4])
@@ -42,9 +49,7 @@ class ScreenImage():
         # ax.imshow(im[5], cmap="gray")
         # self.im_config(name[5])
 
-        plt.show()
-
     def im_config(self, name):
-        plt.title(name)
+        plt.title(name, {'fontsize': 20, 'fontweight': 'bold'})
         plt.gca().get_xaxis().set_visible(False)
         plt.gca().get_yaxis().set_visible(False)
